@@ -1,133 +1,205 @@
 <div align="center">
-    
-# Exploring Efficient Open-Vocabulary Segmentation in the Remote Sensing
-**⭐Accepted to AAAI 2026 Oral⭐**
 
-[![Paper](https://img.shields.io/badge/ArXiv-2509.12040-red?style=flat-square)](https://arxiv.org/pdf/2509.12040.pdf) 
+# Open-Vocabulary Remote Sensing Segmentation  
+## Foundation Dataset, Benchmark, and Model
 
-[Open-sourced Datasets](https://pan.baidu.com/s/1eXPwAbXRIecuy0-ZR6u0-Q?pwd=USTC) &nbsp;&nbsp;&nbsp;&nbsp; [Pretrained Weight](https://pan.baidu.com/s/1xX6TBLAn3Xypsq-IZI3azw?pwd=USTC) &nbsp;&nbsp;&nbsp;&nbsp; [Open-sourced Datasets(one drive)](https://1drv.ms/f/c/69a773fee5342110/EnsFZEJptAlHgHmyPUkdoksBN-SUP9JPdu-VC_ePsCLEtg?e=cEX1oC) &nbsp;&nbsp;&nbsp;&nbsp; [Pretrained Weight(one drive)](https://1drv.ms/f/c/69a773fee5342110/EnsFZEJptAlHgHmyPUkdoksBN-SUP9JPdu-VC_ePsCLEtg?e=cEX1oC) 
+**Official repository for OVRSISBenchV2 and Pi-Seg**
+
+[![Paper](https://img.shields.io/badge/Paper-ArXiv-red?style=flat-square)](https://arxiv.org/pdf/2509.12040.pdf)
+[![Benchmark](https://img.shields.io/badge/Benchmark-OVRSISBenchV2-blue?style=flat-square)](#ovrsisbenchv2)
+[![Dataset](https://img.shields.io/badge/Dataset-OVRSIS95K-green?style=flat-square)](#ovrsis95k)
+[![Model](https://img.shields.io/badge/Model-Pi--Seg-orange?style=flat-square)](#pi-seg)
+
+[GitHub Code (Pi-Seg)](https://github.com/LiBingyu01/FGA-seg/tree/Pi-Seg_OVRSISBenchV2) &nbsp;&nbsp;&nbsp;
+[Hugging Face: OVRSIS95K](https://huggingface.co/datasets/kkk2026/OVRSIS95K) &nbsp;&nbsp;&nbsp;
+[Hugging Face: OVRSISBenchV2_OVRSIS](https://huggingface.co/datasets/kkk2026/OVRSISBench_test) &nbsp;&nbsp;&nbsp;
+[Hugging Face: OVRSISBenchV2_other3task](https://huggingface.co/datasets/kkk2026/OVRSISBenchV2_other3task)
 
 </div>
 
-> **Note**  
-> The author sincerely invites you to contribute to this repository so that we can further improve our open-source work together.  
-> If you **encounter any questions or find our any errors**, please feel free to open an issue on GitHub or contact me directly via email at [my email](mailto:libingyu0205@mail.ustc.edu.cn)       (libingyu0205@mail.ustc.edu.cn).
+---
 
+## News
+- **2026/03**: OVRSISBenchV2 resources are released.
+- **2026/03**: OVRSIS95K is publicly available on Hugging Face.
+- **2026/03**: Pi-Seg code branch for OVRSISBenchV2 is available.
+- More checkpoints, scripts, and benchmark resources will be organized and released continuously.
 
-## 🚀 Updates​
-- [x] 2025/9/12: init repository.
-- [x] 2025/9/18: release the trained weight.
-## 🚩 TO DO​
+---
 
-- [ ] submit the open-sourced dataset in huggingface. (already in Baidu Netdisk [OVSISBench](https://pan.baidu.com/s/1eXPwAbXRIecuy0-ZR6u0-Q?pwd=USTC) )
+## Overview
+Open-Vocabulary Remote Sensing Image Segmentation (**OVRSIS**) extends open-vocabulary segmentation from natural images to the remote sensing domain. Instead of predicting masks only for a fixed closed-set label space, OVRSIS aims to segment **arbitrary semantic categories** specified by text prompts.
 
-## Introduction
-Open-Vocabulary Remote Sensing Image Segmentation (OVRSIS), an emerging task that adapts Open-Vocabulary Segmentation (OVS) to the remote sensing (RS) domain, remains underexplored due to the absence of a unified evaluation benchmark and the domain gap between natural and RS images.
-To bridge these gaps, we first establish a standardized OVRSIS benchmark (**OVRSISBench**) based on widely-used RS segmentation datasets, enabling consistent evaluation across methods. Using this benchmark, we comprehensively evaluate several representative OVS/OVRSIS models and reveal their limitations when directly applied to remote sensing scenarios.
-Building on these insights, we propose **RSKT-Seg**, a novel open-vocabulary segmentation framework tailored for remote sensing. RSKT-Seg integrates three key components: (1) a Multi-Directional Cost Map Aggregation (RS-CMA) module that captures rotation-invariant visual cues by computing vision-language cosine similarities across multiple directions; (2) an Efficient Cost Map Fusion (RS-Fusion) transformer, which jointly models spatial and semantic dependencies with a lightweight dimensionality reduction strategy; and (3) a Remote Sensing Knowledge Transfer (RS-Transfer) module that injects pre-trained knowledge and facilitates domain adaptation via enhanced upsampling.
-Extensive experiments on the benchmark show that RSKT-Seg consistently outperforms strong OVS baselines by +3.8 mIoU and +5.9 mACC, while achieving 2× faster inference through efficient aggregation. Our anonymous code is in the appendix. 
+Compared with natural-image OVS, OVRSIS is much more challenging because remote sensing imagery contains:
+- **large domain gaps** between natural-image pretraining and Earth observation scenes,
+- **arbitrary object orientations** and **severe scale variation**,
+- **small targets and dense layouts**,
+- **fragmented evaluation settings** across datasets,
+- **limited scene diversity and long-tail category imbalance**.
 
-### 🌟 New Task: Open-Vocabulary Remote Sensing Semantic Segmantation (OVRSIS)
-![](assets/fig_01.png)
-- OVRSIS aims at segmenting ```arbitrary``` semantic class in remote sensing domain. 
-- OVRSIS methods need ```no finetuning``` adapting to ```new classes```.
+To address these challenges, this project focuses on three tightly coupled components:
+- **OVRSIS95K**: a large-scale and balanced remote sensing segmentation dataset,
+- **OVRSISBenchV2**: a unified and application-oriented benchmark for OVRSIS,
+- **Pi-Seg**: a lightweight and effective baseline for robust open-vocabulary remote sensing segmentation.
 
-### 🌟 New Approach: RSKT-Seg (Remote Sensing Image Segmentation with Domain Adaptation)
-![](assets/fig_method.png)
-- We propose RSKT-seg, a novel framework for open-vocabulary segmentation in remote sensing with Domain Adaptation.
-- A multi-direction remote sensing cost map aggregation (RS-CMA) framework is designed, which is capable of accurately capturing rotation-invariant features in remote sensing images.
-- An efficient cost map aggregation method (RS-Fusion) is presented which enables faster training and inference speeds without sacrificing accuracy.
-- Remote Sensing Knowledge Transfer (RS-Transfer) module is introduced to enable effective model transfer to the remote sensing domain.
+---
 
-### 🌟 Great Performance: More Accurate and Faster Inference Speed with fewer trainable parameters
-![](assets/fig_speed_miou.png)
+## Why OVRSISBenchV2?
+Our previous OVRSISBenchV1 established the first unified open-vocabulary benchmark for remote sensing segmentation. However, its training data scale and scene diversity were still limited, making it difficult to evaluate generalization in more realistic open-world scenarios.
 
-| Method | train time(ms/iteration) | total param.(M) | trainable param(M) |
-| ---- | ---- | ---- | ---- |
-| SED | 8.60 | 180.76 | 89.59 |
-| Cat-Seg | 9.60 | **154.29** | 127.55 |
-| OVRS | 18.53 | 154.32 | 127.57 |
-| RSKT-Seg | **7.96** | 296.15 | **29.89** | 
+**OVRSISBenchV2** extends V1 into a **large-scale, multi-domain, application-oriented research platform**. It is designed not only for standard OVRSIS evaluation, but also for more practical downstream remote sensing tasks.
 
-## Prepare *open-sourced* datasets
-We have expanded the existing dataset from before to form a more comprehensive dataset evaluation.
-![](assets/fig_dataset.png)
+![](assets/pic_fig_2_dataset_01.png)
 
-### Download Datasets: 
-Download DLRSD, iSAID, Potsdam, Vaihingen, LoveDA, UAVid, UDD5, VDD from [OVSISBench](https://pan.baidu.com/s/1eXPwAbXRIecuy0-ZR6u0-Q?pwd=USTC) with password: **USTC**
+### Key improvements of OVRSISBenchV2
+- **170K+ annotated remote sensing images**,
+- **132 semantic categories**,
+- training built on **OVRSIS95K**,
+- evaluation across **diverse satellite and UAV datasets**,
+- additional downstream task protocols for:
+  - **building extraction**,
+  - **road extraction**,
+  - **flood detection**.
 
-- Download *open-sourced* Datasets.
-- Put it into ```./datasets```
+This makes OVRSISBenchV2 a more realistic and more challenging benchmark for studying semantic generalization, cross-domain transfer, and application robustness.
 
-## Installation
-An example of installation is shown below:
-```
-conda create -n RSKT-Seg python=3.8
-conda activate RSKT-Seg
-conda install pytorch==2.3.0 torchvision==0.18.0 torchaudio==2.3.0 pytorch-cuda=11.8 -c pytorch -c nvidia
-pip install -r requirements.txt
-```
-- Linux with Python ≥ 3.8 required
-- Ensure that the versions of PyTorch, TorchVision, and Detectron2 are compatible. For more information, refer to [pytorch.org](https://pytorch.org) and the  [Detectron2 install guide](https://detectron2.readthedocs.io/tutorials/install.html).
+---
 
+## OVRSIS95K
+To provide a stronger training foundation for OVRSIS, we construct **OVRSIS95K**, a large-scale and balanced remote sensing dataset with approximately **95K image-mask pairs** and **39 semantic categories**.
 
-## Prepare *open-sourced* pretrained .pth file
-### Prepare CLIP ViT encoder pretrained file
-- Download *open-sourced* [ViT-B/32](https://openaipublic.azureedge.net/clip/models/40d365715913c9da98579312b702a82c18be219cc2a73407c4526f58eba950af/ViT-B-32.pt) for remoteclip initialization. 
-- Download *open-sourced* [ViT-B/16](https://openaipublic.azureedge.net/clip/models/5806e77cd80f8b59890b7e101eabd078d9fb84e6937f9e85e4ecb61988df416f/ViT-B-16.pt) for CLIP encoder base.
-- Download *open-sourced* [ViT-L/14@336px](https://openaipublic.azureedge.net/clip/models/3035c92b350959924f9f00213499208652fc7ea050643e8b385c2dac08641f02/ViT-L-14-336px.pt) for CLIP encoder large.
+![](assets/pic_ovrsis95k_01.png)
 
-And you can put it in the ```./pretrain``` and modify the ```RSKT_Seg\third_party\clip.py```.
+### Scene domains
+OVRSIS95K covers five representative remote sensing scene types:
+- **town**
+- **industrial**
+- **forest**
+- **waterfront**
+- **wasteland**
 
-    pretrained = {
-    "ViT-B/32": "./pretrained/ViT-B-32.pt",
-    "ViT-B/16": "./pretrained/ViT-B-16.pt",
-    "ViT-L/14@336px": "./pretrained/ViT-L-14-336px.pt",
-    }
+### Annotation pipeline
+OVRSIS95K is built with a scalable semi-automated annotation pipeline that includes:
+1. **caption-driven category generation**,  
+2. **mask proposal extraction**,  
+3. **human verification and correction**.
 
-to the path to the pretrain.
+This design improves annotation efficiency while preserving category quality, semantic diversity, and class balance.
 
-### Prepare DINO ViT encoder pretrained file
-- Download *open-sourced* [DINO](https://drive.google.com/file/d/1kH0wDM_Hl4sEQJG8JjILCo0RTx65X7zV/view)
-- Put it into the ```./pretrain```, and change the ```DINO_WEIGHTS``` in ```./configs```.
+![](assets/pic_fig_2_how2getting_dataset_01.png)
 
-### Prepare RemoteCLIP ViT encoder pretrained file
-- Download *open-sourced* [RemoteCLIP-ViT-B-32.pt](https://huggingface.co/chendelong/RemoteCLIP/tree/main)
+### Dataset links
+- **OVRSIS95K**: [Hugging Face](https://huggingface.co/datasets/kkk2026/OVRSIS95K)
+- **OVRSISBenchV2 (OVRSIS evaluation set)**: [Hugging Face](https://huggingface.co/datasets/kkk2026/OVRSISBench_test)
+- **OVRSISBenchV2 (other three downstream tasks)**: [Hugging Face](https://huggingface.co/datasets/kkk2026/OVRSISBenchV2_other3task)
 
-- Put it into the ```./pretrain```, and change the ```CLIP_PRETRAINED_WEIGHTS_REMOTE``` in ```./configs```.
+---
 
-### Prepare RSKT-Seg pretrained file
+## OVRSISBenchV2
+OVRSISBenchV2 unifies large-scale remote sensing data into a comprehensive benchmark for evaluating open-vocabulary segmentation under diverse imaging conditions.
 
-Download the pre-trained weights of our [RSKT-Seg](https://pan.baidu.com/s/1xX6TBLAn3Xypsq-IZI3azw?pwd=USTC). The weights for DLRSD+ViT-L were lost, so we re-trained a new set of weights, which have better open-vocabulary performance than the previous ones.
-| Method | Backbone | Type   | DLRSD          | iSAID          | LoveDA         | Potsdam        | UAVid          | UDD5           | Vaihingen      | VDD            | Mean of All Datasets |
-|--------|----------|--------|----------------|----------------|----------------|----------------|----------------|----------------|----------------|----------------|-----------------------|
-| RSKT   | ViT-L    | OVRSIS | 91.58 / 95.41  | 56.88 / 74.48  | 31.43 / 55.23  | 37.14 / 53.75  | 23.88 / 38.75  | 45.73 / 59.40  | 42.29 / 63.03  | 40.55 / 58.75  | 46.18 / 62.35        |
+### Benchmark characteristics
+- **Training set**: OVRSIS95K
+- **Evaluation target**: open-vocabulary segmentation on remote sensing datasets with partially disjoint category sets
+- **Coverage**: satellite imagery, UAV imagery, multiple scene distributions, and heterogeneous spatial resolutions
+- **Goal**: assess transferability to **unseen categories**, **novel domains**, and **real-world applications**
 
-## Training and Evaluation
-After you prepare all the datasets and pretrained files:
+### Evaluation protocols
+OVRSISBenchV2 supports two levels of evaluation:
 
-- Using the ```KEY_run.sh``` for Training and Evaluation
-- Using the ```KEY_reproduce.sh``` to reproduce our results
-  
-## Visualization
-- Using the ```KEY_vis.sh``` for Visualization
+#### 1. Standard OVRSIS evaluation
+This protocol measures open-vocabulary semantic segmentation performance on downstream remote sensing datasets, focusing on semantic transfer to unseen categories.
 
-- For the Cost Map Visualization please use ```RSKT_Seg\visualize_corr.py```.
+#### 2. Downstream task-oriented evaluation
+To bridge the gap between benchmark research and practical deployment, OVRSISBenchV2 further includes:
+- **Building Extraction**
+- **Road Extraction**
+- **Flood Detection**
 
+These protocols evaluate not only category generalization, but also task-level robustness in realistic geospatial scenarios.
 
-## Cite our paper
-```
-@article{li2025exploring,
-  title={Exploring Efficient Open-Vocabulary Segmentation in the Remote Sensing},
-  author={Li, Bingyu and Dong, Haocheng and Zhang, Da and Zhao, Zhiyuan and Gao, Junyu and Li, Xuelong},
+---
+
+## Pi-Seg
+**Pi-Seg (Perturbation-Injected Segmentation)** is a lightweight yet effective framework designed for OVRSISBenchV2.
+
+Unlike previous methods that rely heavily on multiple external pretrained encoders for remote sensing domain transfer, Pi-Seg improves generalization by learning a broader and more transferable feature space during training.
+
+### Core idea
+Pi-Seg introduces a **positive-incentive noise learning mechanism** that injects semantically guided perturbations into both:
+- **visual features**, and
+- **textual features**.
+
+This stochastic training strategy encourages the model to learn smoother and more transferable decision boundaries, improving robustness to:
+- **unseen semantic categories**,
+- **domain shifts**,
+- **complex remote sensing scenes**.
+
+### Advantages of Pi-Seg
+- **lighter design** than heavy multi-encoder transfer frameworks,
+- **lower memory and computational cost**, 
+- better support for **higher-resolution remote sensing inputs**,
+- stronger **cross-domain generalization** on OVRSISBenchV1, OVRSISBenchV2, and downstream tasks.
+
+---
+
+## Resources
+### Code
+- **Pi-Seg branch**: [GitHub](https://github.com/LiBingyu01/FGA-seg/tree/Pi-Seg_OVRSISBenchV2)
+
+### Datasets
+- **OVRSIS95K**: [Hugging Face](https://huggingface.co/datasets/kkk2026/OVRSIS95K)
+- **OVRSISBenchV2_OVRSIS**: [Hugging Face](https://huggingface.co/datasets/kkk2026/OVRSISBench_test)
+- **OVRSISBenchV2_other3task**: [Hugging Face](https://huggingface.co/datasets/kkk2026/OVRSISBenchV2_other3task)
+
+### Paper
+- **ArXiv**: [Open-Vocabulary Remote Sensing Segmentation: Foundation Dataset, Benchmark and Model](https://arxiv.org/pdf/2509.12040.pdf)
+
+---
+
+## TODO
+- [ ] Release more cleaned training and evaluation scripts.
+- [ ] Organize model zoo and pretrained checkpoints.
+- [ ] Add detailed installation and usage instructions.
+- [ ] Add benchmark statistics and per-task evaluation examples.
+- [ ] Continue improving documentation and community support.
+
+---
+
+## Contact
+If you encounter any issues, find errors, or would like to contribute to this project, please feel free to open an issue or contact the authors by email:
+
+- **libingyu0205@mail.ustc.edu.cn**
+
+We sincerely welcome contributions from the community.
+
+---
+
+## Citation
+If you find this repository useful, please cite:
+
+```bibtex
+@article{li2026ovrsisbenchv2,
+  title={Open-Vocabulary Remote Sensing Segmentation: Foundation Dataset, Benchmark and Model},
+  author={Li, Bingyu and Huo, Tao and Zhang, Da and Dong, Haocheng and Chen, Lin and Zhao, Zhiyuan and Gao, Junyu and Li, Xuelong},
   journal={arXiv preprint arXiv:2509.12040},
-  year={2025}
+  year={2026}
 }
 ```
 
+---
+
 ## Acknowledgement
-We sincerely appreciate the invaluable contributions of numerous open-source projects and datasets that have supported our work, including but not limited to [DETECTRON2](https://github.com/facebookresearch/detectron2), [CAT-SEG](https://github.com/cvlab-kaist/CAT-Seg), [SAMRS](https://github.com/ViTAE-Transformer/SAMRS), [GSNET](https://github.com/yecy749/GSNet), [LoveDA](https://github.com/Junjue-Wang/LoveDA](https://github.com/yecy749/GSNet?tab=readme-ov-file)), [OVRS](https://github.com/caoql98/OVRS))
+We sincerely appreciate the valuable contributions of the open-source community. This project benefits from a number of excellent prior works and datasets, including but not limited to:
+
+- [Detectron2](https://github.com/facebookresearch/detectron2)
+- [CAT-Seg](https://github.com/cvlab-kaist/CAT-Seg)
+- [OVRS](https://github.com/caoql98/OVRS)
+- [GSNet](https://github.com/yecy749/GSNet)
+- [SAMRS](https://github.com/ViTAE-Transformer/SAMRS)
+- [LoveDA](https://github.com/Junjue-Wang/LoveDA)
+
+---
 
 ## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=LiBingyu01/RSKT-Seg&type=Date)](https://www.star-history.com/#LiBingyu01/RSKT-Seg&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=LiBingyu01/FGA-seg&type=Date)](https://www.star-history.com/#LiBingyu01/FGA-seg&Date)
