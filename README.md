@@ -1,6 +1,6 @@
 <div align="center">
 
-# CAT-Seg with Pi-Seg for OVRSISBenchV2
+# Pi-Seg for OVRSISBenchV2
 ## Perturbation-Injected Open-Vocabulary Remote Sensing Segmentation
 
 **Official implementation of Pi-Seg on CAT-Seg framework for OVRSISBenchV2**
