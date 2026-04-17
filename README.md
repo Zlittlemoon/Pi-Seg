@@ -59,7 +59,7 @@ This repository implements **Pi-Seg (Perturbation-Injected Segmentation)** on th
   - Road Extraction
   - Flood Detection
 
-![](assets/pic_fig_2_ovrsisv2_01.png)
+![](assets/pic_fig_2_dataset_01.png)
 
 ### Why OVRSISBenchV2?
 
