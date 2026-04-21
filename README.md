@@ -5,10 +5,13 @@
 
 **Official implementation of Pi-Seg on CAT-Seg framework for OVRSISBenchV2**
 
-[![Paper](https://img.shields.io/badge/Paper-ArXiv-red?style=flat-square)](https://arxiv.org/pdf/2509.12040.pdf)
+[![Paper](https://img.shields.io/badge/Paper-ArXiv-red?style=flat-square)](https://arxiv.org/html/2604.15652v1)
 [![Benchmark](https://img.shields.io/badge/Benchmark-OVRSISBenchV2-blue?style=flat-square)](#Pi-Seg)
 [![Dataset](https://img.shields.io/badge/Dataset-OVRSIS95K-green?style=flat-square)](#ovrsis95k)
 [![Model](https://img.shields.io/badge/Model-Pi--Seg-orange?style=flat-square)](#pi-seg)
+
+
+[Paper](https://arxiv.org/html/2604.15652v1)
 
 [Hugging Face: OVRSIS95K](https://huggingface.co/datasets/kkk2026/OVRSIS95K) &nbsp;&nbsp;&nbsp;
 [Hugging Face: OVRSISBenchV2_OVRSIS](https://huggingface.co/datasets/kkk2026/OVRSISBenchtest) &nbsp;&nbsp;&nbsp;
