@@ -8,12 +8,10 @@ import copy
 import itertools
 import logging
 import os
-os.environ['TORCH_DISTRIBUTED_DEBUG']='INFO'
 from collections import OrderedDict
 from typing import Any, Dict, List, Set
 
 import torch
-from fvcore.nn import FlopCountAnalysis, flop_count_table
 
 import detectron2.utils.comm as comm
 from detectron2.checkpoint import DetectionCheckpointer
@@ -298,46 +296,6 @@ def main(args):
     torch.set_float32_matmul_precision("high")
     if args.eval_only:
         model = Trainer.build_model(cfg)
-
-        
-        # ===== Parameter Count =====
-        def count_params(m):
-            total = sum(p.numel() for p in m.parameters())
-            trainable = sum(p.numel() for p in m.parameters() if p.requires_grad)
-            return total, trainable
-
-        total, trainable = count_params(model)
-        print(f"\n{'='*50}")
-        print(f"[Params] Total:     {total/1e6:.2f}M")
-        print(f"[Params] Trainable: {trainable/1e6:.2f}M")
-        print(f"[Params] Frozen:    {(total-trainable)/1e6:.2f}M")
-        print("-"*50)
-        predictor = model.sem_seg_head.predictor
-        for name, module in [
-            ("upsample1",  model.upsample1),
-            ("upsample2",  model.upsample2),
-            ("clip_model", predictor.clip_model),
-            ("aggregator", predictor.transformer),
-        ]:
-            t, tr = count_params(module)
-            print(f"  {name:<20s}: total={t/1e6:.2f}M  trainable={tr/1e6:.2f}M")
-        print(f"{'='*50}\n")
-        # ===========================
-
-        # ===== FLOPs Count =====
-        H, W = 600, 800
-        device = next(model.parameters()).device
-        dummy_input = [{"image": torch.zeros(3, H, W, device=device), "height": H, "width": W}]
-        model.eval()
-        with torch.no_grad():
-            flops = FlopCountAnalysis(model, dummy_input)
-            flops.unsupported_ops_warnings(False)
-            flops.uncalled_modules_warnings(False)
-            print(f"\n{'='*50}")
-            print(f"[FLOPs] Total: {flops.total() / 1e6:.2f} MFLOPs  (input {H}x{W})")
-            print(flop_count_table(flops, max_depth=3))
-            print(f"{'='*50}\n")
-        # =======================
         DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(
             cfg.MODEL.WEIGHTS, resume=args.resume
         )
