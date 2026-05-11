@@ -411,6 +411,13 @@ If you find this work useful, please cite:
   pages={5982--5991},
   year={2026}
 }
+
+@article{li2026towards,
+  title={Towards Realistic Open-Vocabulary Remote Sensing Segmentation: Benchmark and Baseline},
+  author={Li, Bingyu and Huo, Tao and Dong, Haocheng and Zhang, Da and Zhao, Zhiyuan and Gao, Junyu and Li, Xuelong},
+  journal={arXiv preprint arXiv:2604.15652},
+  year={2026}
+}
 ```
 
 ---
