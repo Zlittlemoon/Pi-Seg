@@ -41,7 +41,7 @@ This repository implements **Pi-Seg (Perturbation-Injected Segmentation)** on th
 
 ## News
 
-- **2026/04**: Released OVRSISBenchV2 pretrained-model evaluation scripts, including `eval_all_pretrained.sh` and `eval_all_pretrained_start.sh`.
+- **2026/05**: Released OVRSISBenchV2 pretrained-model evaluation scripts, including `eval_all_pretrained.sh` and `eval_all_pretrained_start.sh`.
 - **2026/04**: Released Pi-Seg checkpoints for OVRSISBenchV1 and OVRSISBenchV2 on Hugging Face.
 - **2026/04**: Released the official Pi-Seg implementation based on the CAT-Seg framework.
 - **2026/03**: Released the OVRSIS95K training dataset on Hugging Face.
