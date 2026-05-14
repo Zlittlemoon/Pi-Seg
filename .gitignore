@@ -1,0 +1,5 @@
+third_party/
+datasets/
+vis_examples/
+CAT-Seg-OVRSIS-PI-V1/
+*.pyc
