@@ -331,10 +331,10 @@ def save_wide_csv(result_map, datasets, out_csv_path):
 
 if __name__ == "__main__":
     exp_roots = {
-        "output_vitb_384_DLRSD": "/gemini/space/zhaozy/libingyu/00_OVRSIS_v2/CAT-Seg-OVRSIS-PI-V1/output_vitb_384_DLRSD",
-        "output_vitb_384_iSAID": "/gemini/space/zhaozy/libingyu/00_OVRSIS_v2/CAT-Seg-OVRSIS-PI-V1/output_vitb_384_iSAID",
-        "output_vitl_336_DLRSD": "/gemini/space/zhaozy/libingyu/00_OVRSIS_v2/CAT-Seg-OVRSIS-PI-V1/output_vitl_336_DLRSD",
-        "output_vitl_336_iSAID": "/gemini/space/zhaozy/libingyu/00_OVRSIS_v2/CAT-Seg-OVRSIS-PI-V1/output_vitl_336_iSAID",
+        "output_vitb_384_DLRSD": "output_vitb_384_DLRSD",
+        "output_vitb_384_iSAID": "output_vitb_384_iSAID",
+        "output_vitl_336_DLRSD": "output_vitl_336_DLRSD",
+        "output_vitl_336_iSAID": "/output_vitl_336_iSAID",
     }
 
     exp_dirs = {}
@@ -390,7 +390,7 @@ if __name__ == "__main__":
         )
 
     # 保存 CSV：建议单独放 summary 目录，不要写进 seed 0 目录里
-    summary_dir = "/gemini/space/zhaozy/libingyu/00_OVRSIS_v2/CAT-Seg-OVRSIS-PI-V1"
+    summary_dir = "results_summary"
     os.makedirs(summary_dir, exist_ok=True)
 
     if noslide_map:

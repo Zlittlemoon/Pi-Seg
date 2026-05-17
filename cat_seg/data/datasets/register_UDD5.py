@@ -42,5 +42,5 @@ def register_UDD5(root):
             **meta,
         )
 
-root = "/gemini/space/zhaozy/libingyu/00_OVRSIS_v2/OVRSISBenchV2/datasets/OVRSIS"
+root = "datasets/OVRSISBench_test"
 register_UDD5(root)

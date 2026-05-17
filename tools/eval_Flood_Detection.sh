@@ -31,7 +31,7 @@ python train_net.py --config $config \
  --dist-url "auto" \
  --eval-only \
  OUTPUT_DIR $output/Flood_Detection/eval-WBS_SI_val \
- MODEL.SEM_SEG_HEAD.TEST_CLASS_JSON "/gemini/space/zhaozy/libingyu/00_OVRSIS_v2/OVRSISBenchV2/datasets/flood_detection.json" \
+ MODEL.SEM_SEG_HEAD.TEST_CLASS_JSON "datasets/flood_detection.json" \
  DATASETS.TEST \(\"Flood_Detection_WBS_SI_val_sem_seg\"\,\) \
  TEST.SLIDING_WINDOW "True" \
  MODEL.SEM_SEG_HEAD.POOLING_SIZES "[1,1]" \

@@ -73,5 +73,5 @@ def register_OVRSIS95K(root):
             **meta,
         )
 
-root = "/gemini/space/zhaozy/libingyu/00_OVRSIS_v2/OVRSISBenchV2/datasets"  # 替换为OVRSIS10K数据集的根目录
+root = "datasets"  # 替换为OVRSIS10K数据集的根目录
 register_OVRSIS95K(root)

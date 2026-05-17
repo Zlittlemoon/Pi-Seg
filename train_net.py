@@ -284,6 +284,8 @@ def setup(args):
     add_cat_seg_config(cfg)
     cfg.merge_from_file(args.config_file)
     cfg.merge_from_list(args.opts)
+    # Force fixed seed for both training and eval
+    cfg.SEED = 42
     cfg.freeze()
     default_setup(cfg, args)
     # Setup logger for "mask_former" module

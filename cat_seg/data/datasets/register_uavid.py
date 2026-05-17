@@ -44,5 +44,5 @@ def register_uavid(root):
             **meta,
         )
 
-root = "/gemini/space/zhaozy/libingyu/00_OVRSIS_v2/OVRSISBenchV2/datasets/OVRSIS"
+root = "datasets/OVRSISBench_test"
 register_uavid(root)

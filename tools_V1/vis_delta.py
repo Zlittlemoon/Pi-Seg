@@ -13,8 +13,8 @@ def to_float_array(x):
 
 
 def main():
-    csv_path = "/gemini/space/zhaozy/libingyu/00_OVRSIS_v2/CAT-Seg-OVRSIS-PI-V1/output_vitl_336_iSAID/4/delta_corr_logs/delta_corr_step_log.csv"
-    save_path = "/gemini/space/zhaozy/libingyu/00_OVRSIS_v2/CAT-Seg-OVRSIS-PI-V1/output_vitl_336_iSAID/4/delta_corr_logs/rolling_mean_metrics_with_baseline_paper_style_final.png"
+    csv_path = "output_vitl_336_iSAID/4/delta_corr_logs/delta_corr_step_log.csv"
+    save_path = "output_vitl_336_iSAID/4/delta_corr_logs/rolling_mean_metrics_with_baseline_paper_style_final.png"
 
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
 

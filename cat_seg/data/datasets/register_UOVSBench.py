@@ -228,7 +228,7 @@ def register_usis16k(root):
 # ==============================================================================
 # Execution
 # ==============================================================================
-_root = "/gemini/space/zhaozy/huotao/000OVS/CAT-Seg-UOVS-Cross/datasets"
+_root = "datasets/OVRSISBenchV2_other3task/Building_Extraction"
 register_aqua_ov255(_root)
 register_dutuseg(_root)
 register_mas3k(_root)

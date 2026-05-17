@@ -3,20 +3,20 @@
 # ==========================================
 # 1. 核心配置 (请确保路径与你服务器一致)
 # ==========================================
-CONFIG="/gemini/space/zhaozy/libingyu/00_OVRSIS_v2/CAT-Seg-OVRSIS-PI/configs/vitb_384_OVRSIS95K.yaml"
-MODEL_WEIGHTS="/gemini/space/zhaozy/libingyu/00_OVRSIS_v2/CAT-Seg-OVRSIS-PI/output_vitb_384_OVRSIS95K_time_1/model_final.pth"
+CONFIG="configs/vitb_384_OVRSIS95K.yaml"
+MODEL_WEIGHTS="output_vitb_384_OVRSIS95K_time_1/model_final.pth"
 
 # 路径配置
-OUTPUT_BASE="/gemini/space/zhaozy/libingyu/00_OVRSIS_v2/CAT-Seg-OVRSIS-PI/vis_rs/PISeg_UABG"
-SAMPLED_BASE="/gemini/space/zhaozy/libingyu/00_OVRSIS_v2/CAT-Seg-OVRSIS-PI/vis_rs/vis_images"
+OUTPUT_BASE="vis_rs/PISeg_UABG"
+SAMPLED_BASE="vis_rs/vis_images"
 
 # 数据集配置 (注意：我已经帮你去掉了行尾的逗号)
 DATASETS=(
-    "LoveDA|png|LoveDA_all_sem_seg|/gemini/space/zhaozy/libingyu/00_OVRSIS_v2/OVRSISBenchV2/datasets/LoveDA.json"
-    "OpenEarthMap|tif|OpenEarthMap_all_sem_seg|/gemini/space/zhaozy/libingyu/00_OVRSIS_v2/OVRSISBenchV2/datasets/openearthmap.json"
-    "uavid|png|uavid_all_sem_seg|/gemini/space/zhaozy/libingyu/00_OVRSIS_v2/OVRSISBenchV2/datasets/uavid.json"
-    "UDD5|JPG|UDD5_all_sem_seg|/gemini/space/zhaozy/libingyu/00_OVRSIS_v2/OVRSISBenchV2/datasets/UDD5.json"
-    "VDD|JPG|VDD_all_sem_seg|/gemini/space/zhaozy/libingyu/00_OVRSIS_v2/OVRSISBenchV2/datasets/VDD.json"
+    "LoveDA|png|LoveDA_all_sem_seg|/datasets/LoveDA.json"
+    "OpenEarthMap|tif|OpenEarthMap_all_sem_seg|/datasets/openearthmap.json"
+    "uavid|png|uavid_all_sem_seg|/datasets/uavid.json"
+    "UDD5|JPG|UDD5_all_sem_seg|/datasets/UDD5.json"
+    "VDD|JPG|VDD_all_sem_seg|/datasets/VDD.json"
 )
 
 # 指定单卡运行使用的 GPU ID (默认使用 0 号卡)

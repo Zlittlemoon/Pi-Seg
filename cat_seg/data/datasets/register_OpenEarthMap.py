@@ -46,5 +46,5 @@ def register_OpenEarthMap(root):
             **meta,
         )
 
-root = "/gemini/space/zhaozy/libingyu/00_OVRSIS_v2/OVRSISBenchV2/datasets/OVRSIS"  # 替换为OpenEarthMap数据集的根目录
+root = "datasets/OVRSISBench_test"  # 替换为OpenEarthMap数据集的根目录
 register_OpenEarthMap(root)

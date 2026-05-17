@@ -31,7 +31,7 @@ python train_net.py --config $config \
  --dist-url "auto" \
  --eval-only \
  OUTPUT_DIR $output/Road_Extraction/eval-CHN6_CUG \
- MODEL.SEM_SEG_HEAD.TEST_CLASS_JSON "/gemini/space/zhaozy/libingyu/00_OVRSIS_v2/OVRSISBenchV2/datasets/road_extraction.json" \
+ MODEL.SEM_SEG_HEAD.TEST_CLASS_JSON "datasets/road_extraction.json" \
  DATASETS.TEST \(\"Road_Extraction_CHN6_CUG_sem_seg\"\,\) \
  TEST.SLIDING_WINDOW "True" \
  MODEL.SEM_SEG_HEAD.POOLING_SIZES "[1,1]" \
@@ -44,7 +44,7 @@ python train_net.py --config $config \
  --dist-url "auto" \
  --eval-only \
  OUTPUT_DIR $output/Road_Extraction/eval-DeepGlobe \
- MODEL.SEM_SEG_HEAD.TEST_CLASS_JSON "/gemini/space/zhaozy/libingyu/00_OVRSIS_v2/OVRSISBenchV2/datasets/road_extraction.json" \
+ MODEL.SEM_SEG_HEAD.TEST_CLASS_JSON "datasets/road_extraction.json" \
  DATASETS.TEST \(\"Road_Extraction_DeepGlobe_sem_seg\"\,\) \
  TEST.SLIDING_WINDOW "True" \
  MODEL.SEM_SEG_HEAD.POOLING_SIZES "[1,1]" \
@@ -57,7 +57,7 @@ python train_net.py --config $config \
  --dist-url "auto" \
  --eval-only \
  OUTPUT_DIR $output/Road_Extraction/eval-Massachusetts \
- MODEL.SEM_SEG_HEAD.TEST_CLASS_JSON "/gemini/space/zhaozy/libingyu/00_OVRSIS_v2/OVRSISBenchV2/datasets/road_extraction.json" \
+ MODEL.SEM_SEG_HEAD.TEST_CLASS_JSON "datasets/road_extraction.json" \
  DATASETS.TEST \(\"Road_Extraction_Massachusetts_sem_seg\"\,\) \
  TEST.SLIDING_WINDOW "True" \
  MODEL.SEM_SEG_HEAD.POOLING_SIZES "[1,1]" \
@@ -70,7 +70,7 @@ python train_net.py --config $config \
  --dist-url "auto" \
  --eval-only \
  OUTPUT_DIR $output/Road_Extraction/eval-SpaceNet \
- MODEL.SEM_SEG_HEAD.TEST_CLASS_JSON "/gemini/space/zhaozy/libingyu/00_OVRSIS_v2/OVRSISBenchV2/datasets/road_extraction.json" \
+ MODEL.SEM_SEG_HEAD.TEST_CLASS_JSON "datasets/road_extraction.json" \
  DATASETS.TEST \(\"Road_Extraction_SpaceNet_sem_seg\"\,\) \
  TEST.SLIDING_WINDOW "True" \
  MODEL.SEM_SEG_HEAD.POOLING_SIZES "[1,1]" \

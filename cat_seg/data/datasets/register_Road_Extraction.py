@@ -42,5 +42,5 @@ def register_Road_Extraction(root):
             **meta,
         )
 
-root = "/gemini/space/zhaozy/libingyu/00_OVRSIS_v2/OVRSISBenchV2/datasets/Road_Extraction"  # 替换为Road_Extraction数据集的根目录
+root = "datasets/OVRSISBenchV2_other3task/Road_Extraction"  # 替换为Road_Extraction数据集的根目录
 register_Road_Extraction(root)

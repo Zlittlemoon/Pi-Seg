@@ -39,5 +39,5 @@ def register_Flood_Detection(root):
             **meta,
         )
 
-root = "/gemini/space/zhaozy/libingyu/00_OVRSIS_v2/OVRSISBenchV2/datasets/Flood_Detection"  # 替换为Flood_Detection数据集的根目录
+root = "datasets/OVRSISBenchV2_other3task/Flood_Detection"  # 替换为Flood_Detection数据集的根目录
 register_Flood_Detection(root)

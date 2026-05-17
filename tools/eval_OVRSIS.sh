@@ -31,7 +31,7 @@ python train_net.py --config $config \
  --dist-url "auto" \
  --eval-only \
  OUTPUT_DIR $output/OVRSIS/eval-iSAID \
- MODEL.SEM_SEG_HEAD.TEST_CLASS_JSON "/gemini/space/zhaozy/libingyu/00_OVRSIS_v2/OVRSISBenchV2/datasets/iSAID.json" \
+ MODEL.SEM_SEG_HEAD.TEST_CLASS_JSON "datasets/iSAID.json" \
  DATASETS.TEST \(\"iSAID_all_sem_seg\"\,\) \
  TEST.SLIDING_WINDOW "True" \
  MODEL.SEM_SEG_HEAD.POOLING_SIZES "[1,1]" \
@@ -44,7 +44,7 @@ python train_net.py --config $config \
  --dist-url "auto" \
  --eval-only \
  OUTPUT_DIR $output/OVRSIS/eval-DLRSD \
- MODEL.SEM_SEG_HEAD.TEST_CLASS_JSON "/gemini/space/zhaozy/libingyu/00_OVRSIS_v2/OVRSISBenchV2/datasets/DLRSD.json" \
+ MODEL.SEM_SEG_HEAD.TEST_CLASS_JSON "datasets/DLRSD.json" \
  DATASETS.TEST \(\"DLRSD_all_sem_seg\"\,\) \
  TEST.SLIDING_WINDOW "True" \
  MODEL.SEM_SEG_HEAD.POOLING_SIZES "[1,1]" \
@@ -58,7 +58,7 @@ python train_net.py --config $config \
  --dist-url "auto" \
  --eval-only \
  OUTPUT_DIR $output/OVRSIS/eval-Potsdam \
- MODEL.SEM_SEG_HEAD.TEST_CLASS_JSON "/gemini/space/zhaozy/libingyu/00_OVRSIS_v2/OVRSISBenchV2/datasets/Potsdam.json" \
+ MODEL.SEM_SEG_HEAD.TEST_CLASS_JSON "datasets/Potsdam.json" \
  DATASETS.TEST \(\"Potsdam_all_sem_seg\"\,\) \
  TEST.SLIDING_WINDOW "True" \
  MODEL.SEM_SEG_HEAD.POOLING_SIZES "[1,1]" \
@@ -71,7 +71,7 @@ python train_net.py --config $config \
  --dist-url "auto" \
  --eval-only \
  OUTPUT_DIR $output/OVRSIS/eval-Vaihingen \
- MODEL.SEM_SEG_HEAD.TEST_CLASS_JSON "/gemini/space/zhaozy/libingyu/00_OVRSIS_v2/OVRSISBenchV2/datasets/Vaihingen.json" \
+ MODEL.SEM_SEG_HEAD.TEST_CLASS_JSON "datasets/Vaihingen.json" \
  DATASETS.TEST \(\"Vaihingen_all_sem_seg\"\,\) \
  TEST.SLIDING_WINDOW "True" \
  MODEL.SEM_SEG_HEAD.POOLING_SIZES "[1,1]" \
@@ -84,7 +84,7 @@ python train_net.py --config $config \
  --dist-url "auto" \
  --eval-only \
  OUTPUT_DIR $output/OVRSIS/eval-UDD5 \
- MODEL.SEM_SEG_HEAD.TEST_CLASS_JSON "/gemini/space/zhaozy/libingyu/00_OVRSIS_v2/OVRSISBenchV2/datasets/UDD5.json" \
+ MODEL.SEM_SEG_HEAD.TEST_CLASS_JSON "datasets/UDD5.json" \
  DATASETS.TEST \(\"UDD5_all_sem_seg\"\,\) \
  TEST.SLIDING_WINDOW "True" \
  MODEL.SEM_SEG_HEAD.POOLING_SIZES "[1,1]" \
@@ -97,7 +97,7 @@ python train_net.py --config $config \
  --dist-url "auto" \
  --eval-only \
  OUTPUT_DIR $output/OVRSIS/eval-LoveDA \
- MODEL.SEM_SEG_HEAD.TEST_CLASS_JSON "/gemini/space/zhaozy/libingyu/00_OVRSIS_v2/OVRSISBenchV2/datasets/LoveDA.json" \
+ MODEL.SEM_SEG_HEAD.TEST_CLASS_JSON "datasets/LoveDA.json" \
  DATASETS.TEST \(\"LoveDA_all_sem_seg\"\,\) \
  TEST.SLIDING_WINDOW "True" \
  MODEL.SEM_SEG_HEAD.POOLING_SIZES "[1,1]" \
@@ -110,7 +110,7 @@ python train_net.py --config $config \
  --dist-url "auto" \
  --eval-only \
  OUTPUT_DIR $output/OVRSIS/eval-uavid \
- MODEL.SEM_SEG_HEAD.TEST_CLASS_JSON "/gemini/space/zhaozy/libingyu/00_OVRSIS_v2/OVRSISBenchV2/datasets/uavid.json" \
+ MODEL.SEM_SEG_HEAD.TEST_CLASS_JSON "datasets/uavid.json" \
  DATASETS.TEST \(\"uavid_all_sem_seg\"\,\) \
  TEST.SLIDING_WINDOW "True" \
  MODEL.SEM_SEG_HEAD.POOLING_SIZES "[1,1]" \
@@ -123,7 +123,7 @@ python train_net.py --config $config \
  --dist-url "auto" \
  --eval-only \
  OUTPUT_DIR $output/OVRSIS/eval-VDD \
- MODEL.SEM_SEG_HEAD.TEST_CLASS_JSON "/gemini/space/zhaozy/libingyu/00_OVRSIS_v2/OVRSISBenchV2/datasets/VDD.json" \
+ MODEL.SEM_SEG_HEAD.TEST_CLASS_JSON "datasets/VDD.json" \
  DATASETS.TEST \(\"VDD_all_sem_seg\"\,\) \
  TEST.SLIDING_WINDOW "True" \
  MODEL.SEM_SEG_HEAD.POOLING_SIZES "[1,1]" \
@@ -136,7 +136,7 @@ python train_net.py --config $config \
  --dist-url "auto" \
  --eval-only \
  OUTPUT_DIR $output/OVRSIS/eval-flair \
- MODEL.SEM_SEG_HEAD.TEST_CLASS_JSON "/gemini/space/zhaozy/libingyu/00_OVRSIS_v2/OVRSISBenchV2/datasets/flair.json" \
+ MODEL.SEM_SEG_HEAD.TEST_CLASS_JSON "datasets/flair.json" \
  DATASETS.TEST \(\"FLAIR_test_sem_seg\"\,\) \
  TEST.SLIDING_WINDOW "True" \
  MODEL.SEM_SEG_HEAD.POOLING_SIZES "[1,1]" \
@@ -149,7 +149,7 @@ python train_net.py --config $config \
  --dist-url "auto" \
  --eval-only \
  OUTPUT_DIR $output/OVRSIS/eval-openearthmap \
- MODEL.SEM_SEG_HEAD.TEST_CLASS_JSON "/gemini/space/zhaozy/libingyu/00_OVRSIS_v2/OVRSISBenchV2/datasets/openearthmap.json" \
+ MODEL.SEM_SEG_HEAD.TEST_CLASS_JSON "datasets/openearthmap.json" \
  DATASETS.TEST \(\"OpenEarthMap_all_sem_seg\"\,\) \
  TEST.SLIDING_WINDOW "True" \
  MODEL.SEM_SEG_HEAD.POOLING_SIZES "[1,1]" \
