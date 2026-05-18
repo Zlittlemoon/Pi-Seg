@@ -15,6 +15,7 @@ from einops import rearrange
 import fvcore.nn.weight_init as weight_init
 import open_clip
 import os
+import re
 
 from detectron2.config import configurable
 from detectron2.layers import Conv2d, ShapeSpec, get_norm
@@ -25,6 +26,7 @@ from cat_seg.clip import clip
 from cat_seg.clip import imagenet_templates
 from cat_seg.pini_vpn import ImageVpnGenerator, TextVpnGenerator
 from cat_seg.visualizer import CATSegVisualizer
+from cat_seg.lazy_score import compute_lazy_score
 
 
 class CATSegPredictor(nn.Module):
@@ -166,6 +168,15 @@ class CATSegPredictor(nn.Module):
         self.cached_corr_before = None
         self.cached_corr_after = None
         self.cached_delta_corr = None
+
+        self.lazy_vis = os.environ.get("PISEG_LAZY_VIS", "0") == "1"
+        self.lazy_vis_dir = os.environ.get(
+            "PISEG_LAZY_VIS_DIR",
+            os.path.join(vis_save_dir, "lazy_vis_dump"),
+        )
+        self.lazy_vis_limit = int(os.environ.get("PISEG_LAZY_VIS_LIMIT", "200"))
+        self.lazy_vis_count = 0    
+
     def correlation(self, img_feats, text_feats):
         img_feats = F.normalize(img_feats, dim=1)
         text_feats = F.normalize(text_feats, dim=-1)
@@ -221,6 +232,68 @@ class CATSegPredictor(nn.Module):
         ret["vis_save_dir"] = os.path.join(cfg.OUTPUT_DIR, "vis_noise")
 
         return ret
+        
+    @torch.no_grad()
+    def _save_lazy_vis_dump(
+        self,
+        files_name,
+        input_images,
+        targets,
+        class_names,
+        image_feature,
+        text,
+        out,
+    ):
+        if self.lazy_vis_count >= self.lazy_vis_limit:
+            return
+
+        os.makedirs(self.lazy_vis_dir, exist_ok=True)
+
+        # 原始 CLIP image-text cost map
+        # image_feature: (B, C, H, W)
+        # text: (B, T, P, C)
+        # corr: (B, P, T, H, W)
+        corr = self.correlation(image_feature, text).mean(dim=1)  # (B, T, H, W)
+
+        # LazyScore: (B, 1, H, W)
+        lazy_score = compute_lazy_score(image_feature)
+
+        # Pi-Seg final prediction logits -> score
+        pred = out.sigmoid()  # (B, T, H_out, W_out)
+
+        B = image_feature.shape[0]
+
+        for b in range(B):
+            if self.lazy_vis_count >= self.lazy_vis_limit:
+                break
+
+            if files_name is not None:
+                base = os.path.basename(str(files_name[b]))
+            else:
+                base = f"sample_{self.lazy_vis_count}.png"
+
+            base = re.sub(r"[^a-zA-Z0-9_.-]", "_", base)
+            save_path = os.path.join(
+                self.lazy_vis_dir,
+                base + f"_lazy_{self.lazy_vis_count:05d}.pt",
+            )
+
+            item = {
+                "file_name": base,
+                "image": input_images[b].detach().cpu()
+                if input_images is not None
+                else None,
+                "target": targets[b].detach().cpu()
+                if targets is not None
+                else None,
+                "corr": corr[b].detach().float().cpu(),          # (T, H, W)
+                "lazy": lazy_score[b, 0].detach().float().cpu(), # (H, W)
+                "pred": pred[b].detach().float().cpu(),          # (T, H_out, W_out)
+                "class_names": list(class_names),
+            }
+
+            torch.save(item, save_path)
+            self.lazy_vis_count += 1
 
     def forward(self, 
                 x, 
@@ -324,6 +397,18 @@ class CATSegPredictor(nn.Module):
 
 
         out = self.transformer(x, text, vis)
+
+        if (not self.training) and self.lazy_vis:
+            self._save_lazy_vis_dump(
+                files_name=files_name,
+                input_images=input_images,
+                targets=targets,
+                class_names=class_names,
+                image_feature=image_feature_before_noise,
+                text=text,
+                out=out,
+            )
+
         return out
 
     @torch.no_grad()

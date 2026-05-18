@@ -338,17 +338,28 @@ class CATSeg(nn.Module):
         res5 = self.upsample2(res5)
         features = {'res5': res5, 'res4': res4, 'res3': res3,}
 
-        # files_name = [x["file_name"] for x in batched_inputs]
+        files_name = [
+            x.get("file_name", f"sample_{i}.png")
+            for i, x in enumerate(batched_inputs)
+        ]
+
         input_images = [x["image"] for x in batched_inputs]
-        # targets = torch.stack([x["sem_seg"].to(self.device) for x in batched_inputs], dim=0)
+
+        targets_for_vis = None
+        if all("sem_seg" in x for x in batched_inputs):
+            targets_for_vis = torch.stack(
+                [x["sem_seg"].to(self.device) for x in batched_inputs],
+                dim=0,
+            )
+
         outputs = self.sem_seg_head(
             clip_features,
             features,
-            # files_name=files_name,
-            files_name=None,
+            files_name=files_name,
             input_images=input_images,
-            targets=None,
+            targets=targets_for_vis,
         )
+        
         if self.training:
             targets = torch.stack([x["sem_seg"].to(self.device) for x in batched_inputs], dim=0)
             outputs = F.interpolate(outputs, size=(targets.shape[-2], targets.shape[-1]), mode="bilinear", align_corners=False)

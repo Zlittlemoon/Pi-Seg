@@ -4,6 +4,8 @@ vis_examples/
 CAT-Seg-OVRSIS-PI-V1/
 logs/
 outputs/
+train_outputs/
+outputs_analyze/
 output_vitb_384_DLRSD/
 output_vitb_384_iSAID/
 output_vitl_336_DLRSD/
