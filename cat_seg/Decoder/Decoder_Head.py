@@ -169,6 +169,67 @@ class CATSegPredictor(nn.Module):
         self.cached_corr_after = None
         self.cached_delta_corr = None
 
+        # ============================================================
+        # Uncertainty-aware Lazy Image-SPM Gate
+        # ============================================================
+        # 默认关闭；只有显式设置 PISEG_UA_LAZY_GATE=1 才启用。
+        self.ua_lazy_gate = os.environ.get("PISEG_UA_LAZY_GATE", "0") == "1"
+
+        # 四种 gate 模式：
+        #   none     : 不使用 gate，即使 PISEG_UA_LAZY_GATE=1 也等价 baseline
+        #   unc      : 只使用 Raw cost uncertainty
+        #   lazy     : 只使用 LazyScore
+        #   unc_lazy : 使用 uncertainty * LazyScore
+        self.ua_lazy_gate_type = os.environ.get(
+            "PISEG_UA_LAZY_GATE_TYPE",
+            "unc_lazy",
+        ).lower()
+
+        # gate 强度。gate_map = 1 + alpha * gate_core
+        self.ua_lazy_alpha = float(os.environ.get("PISEG_UA_LAZY_ALPHA", "0.2"))
+
+        # uncertainty 计算方式：
+        #   margin  : 1 - (top1_prob - top2_prob)
+        #   entropy : normalized entropy
+        self.ua_lazy_unc_mode = os.environ.get(
+            "PISEG_UA_LAZY_UNC",
+            "margin",
+        ).lower()
+
+        # LazyScore 计算参数
+        self.ua_lazy_low_ratio = float(os.environ.get("PISEG_UA_LAZY_LOW_RATIO", "0.25"))
+        self.ua_lazy_topk_ratio = float(os.environ.get("PISEG_UA_LAZY_TOPK_RATIO", "0.15"))
+
+        # 是否打印调试日志。多卡训练时日志会很多，正式训练建议关掉。
+        self.ua_lazy_verbose = os.environ.get("PISEG_UA_LAZY_VERBOSE", "0") == "1"
+
+        valid_gate_types = {"none", "unc", "lazy", "unc_lazy"}
+        if self.ua_lazy_gate_type not in valid_gate_types:
+            raise ValueError(
+                f"Unknown PISEG_UA_LAZY_GATE_TYPE={self.ua_lazy_gate_type}. "
+                f"Valid choices: {sorted(valid_gate_types)}"
+            )
+
+        # 只打印一次初始化配置，用来确认环境变量是否真的传进来了
+        print(
+            "[UA-Lazy-Config] "
+            f"enabled={self.ua_lazy_gate}, "
+            f"type={self.ua_lazy_gate_type}, "
+            f"alpha={self.ua_lazy_alpha}, "
+            f"unc_mode={self.ua_lazy_unc_mode}, "
+            f"low_ratio={self.ua_lazy_low_ratio}, "
+            f"topk_ratio={self.ua_lazy_topk_ratio}, "
+            f"verbose={self.ua_lazy_verbose}",
+            flush=True,
+        )
+
+        valid_unc_modes = {"margin", "entropy"}
+        if self.ua_lazy_unc_mode not in valid_unc_modes:
+            raise ValueError(
+                f"Unknown PISEG_UA_LAZY_UNC={self.ua_lazy_unc_mode}. "
+                f"Valid choices: {sorted(valid_unc_modes)}"
+            )
+
         self.lazy_vis = os.environ.get("PISEG_LAZY_VIS", "0") == "1"
         self.lazy_vis_dir = os.environ.get(
             "PISEG_LAZY_VIS_DIR",
@@ -181,7 +242,135 @@ class CATSegPredictor(nn.Module):
         img_feats = F.normalize(img_feats, dim=1)
         text_feats = F.normalize(text_feats, dim=-1)
         corr = torch.einsum("bchw, btpc -> bpthw", img_feats, text_feats)
-        return corr    
+        return corr  
+
+    @torch.no_grad()
+    def _norm01_spatial(self, x, eps=1e-6):
+        """
+        x: (B, 1, H, W) or (B, H, W)
+        """
+        if x.dim() == 3:
+            x = x[:, None]
+
+        x_min = x.amin(dim=(-2, -1), keepdim=True)
+        x_max = x.amax(dim=(-2, -1), keepdim=True)
+        return (x - x_min) / (x_max - x_min + eps)
+
+
+    @torch.no_grad()
+    def _compute_cost_uncertainty(self, image_feature, text):
+        """
+        从 raw image-text cost map 计算空间不确定性。
+
+        Args:
+            image_feature: Tensor, shape (B, C, H, W)
+            text: Tensor, shape (B, T, P, C)
+
+        Returns:
+            uncertainty: Tensor, shape (B, 1, H, W), normalized to [0, 1]
+        """
+        # self.correlation(image_feature, text): (B, P, T, H, W)
+        # mean over prompt dim -> (B, T, H, W)
+        corr = self.correlation(image_feature, text).mean(dim=1)
+
+        if corr.shape[1] <= 1:
+            return torch.zeros(
+                corr.shape[0],
+                1,
+                corr.shape[-2],
+                corr.shape[-1],
+                device=corr.device,
+                dtype=corr.dtype,
+            )
+
+        prob = corr.float().softmax(dim=1)
+
+        if self.ua_lazy_unc_mode == "entropy":
+            # normalized entropy, high means uncertain
+            eps = 1e-6
+            entropy = -(prob * (prob + eps).log()).sum(dim=1, keepdim=True)
+            entropy = entropy / torch.log(
+                torch.tensor(float(prob.shape[1]), device=prob.device)
+            )
+            uncertainty = entropy
+
+        elif self.ua_lazy_unc_mode == "margin":
+            # margin uncertainty, high means top1 and top2 are close
+            top2 = prob.topk(k=2, dim=1).values
+            margin = top2[:, 0:1] - top2[:, 1:2]
+            uncertainty = 1.0 - margin
+
+        else:
+            raise ValueError(
+                f"Unknown PISEG_UA_LAZY_UNC={self.ua_lazy_unc_mode}. "
+                "Valid choices: margin, entropy"
+            )
+
+        return self._norm01_spatial(uncertainty)
+
+    @torch.no_grad()
+    def _build_ua_lazy_gate_map(self, image_feature, text):
+        """
+        构造用于 Image-SPM variance 的 gate map。
+
+        Args:
+            image_feature: Tensor, shape (B, C, H, W)
+            text: Tensor, shape (B, T, P, C)
+
+        Returns:
+            gate_map: Tensor, shape (B, 1, H, W)
+            debug_dict: dict
+        """
+        B, C, H, W = image_feature.shape
+
+        # none 模式：显式 baseline，用于确认改代码后仍可跑原始行为。
+        if self.ua_lazy_gate_type == "none":
+            gate_map = torch.ones(
+                B, 1, H, W,
+                device=image_feature.device,
+                dtype=image_feature.dtype,
+            )
+            debug_dict = {
+                "lazy_mean": 0.0,
+                "unc_mean": 0.0,
+                "gate_mean": 1.0,
+                "gate_max": 1.0,
+            }
+            return gate_map, debug_dict
+
+        lazy_score = compute_lazy_score(
+            image_feature,
+            low_ratio=self.ua_lazy_low_ratio,
+            topk_ratio=self.ua_lazy_topk_ratio,
+        ).to(device=image_feature.device, dtype=image_feature.dtype)
+
+        uncertainty = self._compute_cost_uncertainty(
+            image_feature,
+            text,
+        ).to(device=image_feature.device, dtype=image_feature.dtype)
+
+        if self.ua_lazy_gate_type == "unc":
+            gate_core = uncertainty
+        elif self.ua_lazy_gate_type == "lazy":
+            gate_core = lazy_score
+        elif self.ua_lazy_gate_type == "unc_lazy":
+            gate_core = uncertainty * lazy_score
+        else:
+            raise ValueError(
+                f"Unknown PISEG_UA_LAZY_GATE_TYPE={self.ua_lazy_gate_type}"
+            )
+
+        # gate range: [1, 1 + alpha]，只放大扰动方差，不反向抑制原 Image-SPM。
+        gate_map = 1.0 + self.ua_lazy_alpha * gate_core
+        gate_map = gate_map.clamp(min=1.0, max=1.0 + self.ua_lazy_alpha)
+
+        debug_dict = {
+            "lazy_mean": float(lazy_score.mean().item()),
+            "unc_mean": float(uncertainty.mean().item()),
+            "gate_mean": float(gate_map.mean().item()),
+            "gate_max": float(gate_map.max().item()),
+        }
+        return gate_map, debug_dict
 
     @classmethod
     def from_config(cls, cfg):#, in_channels, mask_classification):
@@ -317,14 +506,56 @@ class CATSegPredictor(nn.Module):
         text = text.repeat(x.shape[0], 1, 1, 1)
         image_feature_before_noise = x.detach()
         # PiNI: image feature noise guided by text cross-attention (training only)
+        im_noise = None
+        ua_lazy_gate_map = None
+
         if (self.training or self.is_vis) and self.image_vpn is not None:
             B, C, H, W = x.shape
+
             spatial_feat = rearrange(x, 'B C H W -> B (H W) C')
-            # Mean-pool text across prompts: (B,T,P,C) -> (T,C)
+
+            # Mean-pool text across prompts: (B, T, P, C) -> (T, C)
             text_for_attn = text[0].mean(dim=1).detach()
+
             mu, variance = self.image_vpn(spatial_feat.detach(), text_for_attn)
+
+            # ========================================================
+            # Uncertainty-aware Lazy gate for Image-SPM variance
+            # ========================================================
+            if self.ua_lazy_gate:
+                with torch.no_grad():
+                    ua_lazy_gate_map, ua_debug = self._build_ua_lazy_gate_map(
+                        image_feature_before_noise,
+                        text,
+                    )
+
+                    gate_flat = rearrange(
+                        ua_lazy_gate_map,
+                        'B 1 H W -> B (H W) 1',
+                    )
+
+                variance = variance * gate_flat.to(
+                    dtype=variance.dtype,
+                    device=variance.device,
+                )
+
+                if self.ua_lazy_verbose:
+                    print(
+                        "[UA-Lazy] "
+                        f"type={self.ua_lazy_gate_type}, "
+                        f"alpha={self.ua_lazy_alpha:.3f}, "
+                        f"unc_mode={self.ua_lazy_unc_mode}, "
+                        f"lazy_mean={ua_debug['lazy_mean']:.4f}, "
+                        f"unc_mean={ua_debug['unc_mean']:.4f}, "
+                        f"gate_mean={ua_debug['gate_mean']:.4f}, "
+                        f"gate_max={ua_debug['gate_max']:.4f}",
+                        flush=True,
+                    )
+
             im_noise = self.image_vpn.sample(mu, variance)
+
             x = x + rearrange(im_noise, 'B (H W) C -> B C H W', H=H, W=W)
+
         image_feature_after_noise = x.detach()
         
         

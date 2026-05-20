@@ -2,6 +2,12 @@ import torch
 
 
 def _norm01(x, eps=1e-6):
+    """
+    x: (B, 1, H, W) or (B, H, W)
+    """
+    if x.dim() == 3:
+        x = x[:, None]
+
     x_min = x.amin(dim=(-2, -1), keepdim=True)
     x_max = x.amax(dim=(-2, -1), keepdim=True)
     return (x - x_min) / (x_max - x_min + eps)
