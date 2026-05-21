@@ -329,6 +329,33 @@ class CATSegPredictor(nn.Module):
 
         return self._norm01_spatial(uncertainty)
 
+    def _compute_cls_logits_for_final_out(self, image_cls_feature, text):
+        """
+        Compute CLS-text logits for final-logit correction.
+
+        Args:
+            image_cls_feature: Tensor, shape (B, C)
+            text: Tensor, shape (B, T, P, C)
+
+        Returns:
+            cls_logits: Tensor, shape (B, T)
+        """
+        image_cls_feature = F.normalize(image_cls_feature, dim=-1)
+        text = F.normalize(text, dim=-1)
+
+        # (B, C) x (B, T, P, C) -> (B, T, P)
+        cls_logits_prompt = torch.einsum(
+            "bc,btpc->btp",
+            image_cls_feature,
+            text,
+        )
+
+        # SegEarth-OV 的 query_features 是 prompt ensemble 后的类别特征；
+        # Pi-Seg 这里还有 prompt 维 P，所以用 mean(P) 更接近 SegEarth-OV。
+        cls_logits = cls_logits_prompt.mean(dim=-1)  # (B, T)
+
+        return cls_logits
+
     @torch.no_grad()
     def _build_ua_lazy_gate_map(self, image_feature, text):
         """
@@ -650,32 +677,51 @@ class CATSegPredictor(nn.Module):
                 print(f"[VIS] noise_ratio={noise_ratio:.6f}, delta_ratio={delta_ratio:.6f}")
 
 
-        # SegEarth-OV style global bias alleviation.
-        # 默认只在 eval/inference 使用；训练时启用需要 PISEG_SEGEARTH_APPLY_TRAIN=1。
+        # ------------------------------------------------------------
+        # Original Pi-Seg Aggregator forward.
+        # For variant A, do NOT pass CLS to Aggregator.
+        # We apply CLS subtraction after final logits are produced.
+        # ------------------------------------------------------------
+        out = self.transformer(x, text, vis)
+
+        # ------------------------------------------------------------
+        # SegEarth-OV style Global Bias Alleviation at final logits
+        # ------------------------------------------------------------
         use_segearth_gba = (
             self.segearth_gba
             and image_cls_feature is not None
             and ((not self.training) or self.segearth_apply_train)
         )
 
-        cls_bias_lambda = self.segearth_gba_lambda if use_segearth_gba else 0.0
+        if use_segearth_gba:
+            cls_logits = self._compute_cls_logits_for_final_out(
+                image_cls_feature=image_cls_feature,
+                text=text,
+            )  # (B, T)
 
-        if self.segearth_verbose and use_segearth_gba:
-            print(
-                "[SegEarth-GBA] "
-                f"training={self.training}, "
-                f"lambda={cls_bias_lambda}, "
-                f"cls_shape={tuple(image_cls_feature.shape)}",
-                flush=True,
+            if cls_logits.shape[0] != out.shape[0] or cls_logits.shape[1] != out.shape[1]:
+                raise RuntimeError(
+                    "[SegEarth-GBA-Final] Shape mismatch: "
+                    f"cls_logits={tuple(cls_logits.shape)}, out={tuple(out.shape)}"
+                )
+
+            out = out + self.segearth_gba_lambda * cls_logits[:, :, None, None].to(
+                device=out.device,
+                dtype=out.dtype,
             )
 
-        out = self.transformer(
-            x,
-            text,
-            vis,
-            image_cls_feats=image_cls_feature,
-            cls_bias_lambda=cls_bias_lambda,
-        )
+            if self.segearth_verbose:
+                print(
+                    "[SegEarth-GBA-Final] "
+                    f"training={self.training}, "
+                    f"lambda={self.segearth_gba_lambda}, "
+                    f"out_shape={tuple(out.shape)}, "
+                    f"cls_logits_shape={tuple(cls_logits.shape)}, "
+                    f"cls_min={cls_logits.min().item():.4f}, "
+                    f"cls_max={cls_logits.max().item():.4f}, "
+                    f"cls_mean={cls_logits.mean().item():.4f}",
+                    flush=True,
+                )
 
         if (not self.training) and self.lazy_vis:
             self._save_lazy_vis_dump(

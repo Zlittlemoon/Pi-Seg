@@ -197,14 +197,14 @@ class Aggregator(nn.Module):
         """
         corr = self.correlation(img_feats, text_feats)  # B P T H W
 
-        # SegEarth-OV style global bias alleviation:
-        # corr' = patch_text_corr + lambda * cls_text_corr
-        if image_cls_feats is not None and abs(float(cls_bias_lambda)) > 1e-12:
-            cls_corr = self.cls_correlation(image_cls_feats, text_feats)
-            corr = corr + float(cls_bias_lambda) * cls_corr.to(
-                device=corr.device,
-                dtype=corr.dtype,
-            )
+        # # SegEarth-OV style global bias alleviation:
+        # # corr' = patch_text_corr + lambda * cls_text_corr
+        # if image_cls_feats is not None and abs(float(cls_bias_lambda)) > 1e-12:
+        #     cls_corr = self.cls_correlation(image_cls_feats, text_feats)
+        #     corr = corr + float(cls_bias_lambda) * cls_corr.to(
+        #         device=corr.device,
+        #         dtype=corr.dtype,
+        #     )
 
         projected_guidance, projected_text_guidance, projected_decoder_guidance = None, None, [None, None]
         if self.guidance_projection is not None:
