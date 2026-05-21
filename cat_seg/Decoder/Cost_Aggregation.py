@@ -141,6 +141,27 @@ class Aggregator(nn.Module):
         corr = torch.einsum('bchw, btpc -> bpthw', img_feats, text_feats)
         return corr
 
+    def cls_correlation(self, cls_feats, text_feats):
+        """
+        Args:
+            cls_feats: Tensor, shape (B, C)
+            text_feats: Tensor, shape (B, T, P, C)
+
+        Returns:
+            cls_corr: Tensor, shape (B, P, T, 1, 1)
+        """
+        cls_feats = F.normalize(cls_feats, dim=-1)
+        text_feats = F.normalize(text_feats, dim=-1)
+
+        # (B, C) x (B, T, P, C) -> (B, T, P)
+        cls_corr = torch.einsum("bc, btpc -> btp", cls_feats, text_feats)
+
+        # (B, T, P) -> (B, P, T, 1, 1), 对齐 patch corr: (B, P, T, H, W)
+        cls_corr = rearrange(cls_corr, "B T P -> B P T")
+        cls_corr = cls_corr[:, :, :, None, None]
+
+        return cls_corr
+
     def corr_embed(self, x):
         B = x.shape[0]
         corr_embed = rearrange(x, 'B P T H W -> (B T) P H W')
@@ -157,14 +178,33 @@ class Aggregator(nn.Module):
         corr_embed = rearrange(corr_embed, '(B T) () H W -> B T H W', B=B)
         return corr_embed
 
-    def forward(self, img_feats, text_feats, appearance_guidance):
+    def forward(
+        self,
+        img_feats,
+        text_feats,
+        appearance_guidance,
+        image_cls_feats=None,
+        cls_bias_lambda=0.0,
+    ):
         """
-        Arguments:
-            img_feats: (B, C, H, W)
-            text_feats: (B, T, P, C)
-            apperance_guidance: tuple of (B, C, H, W)
+        Args:
+            img_feats: (B, C, H, W), patch feature map
+            text_feats: (B, T, P, C), text prompt features
+            appearance_guidance: tuple of (B, C, H, W)
+            image_cls_feats: (B, C), CLIP image CLS token
+            cls_bias_lambda: SegEarth-style global bias coefficient.
+                            lambda < 0 means subtract CLS global bias.
         """
-        corr = self.correlation(img_feats, text_feats) # B P T H W
+        corr = self.correlation(img_feats, text_feats)  # B P T H W
+
+        # SegEarth-OV style global bias alleviation:
+        # corr' = patch_text_corr + lambda * cls_text_corr
+        if image_cls_feats is not None and abs(float(cls_bias_lambda)) > 1e-12:
+            cls_corr = self.cls_correlation(image_cls_feats, text_feats)
+            corr = corr + float(cls_bias_lambda) * cls_corr.to(
+                device=corr.device,
+                dtype=corr.dtype,
+            )
 
         projected_guidance, projected_text_guidance, projected_decoder_guidance = None, None, [None, None]
         if self.guidance_projection is not None:

@@ -17,4 +17,5 @@ output_vitb_384_OVRSIS95K_seed42_copy/
 output_eval_vitb_noise_1gpu/
 output_eval_vitb_noise_1gpu_copy/
 pretrained_weights/
+gba_lamda_test
 *.pyc

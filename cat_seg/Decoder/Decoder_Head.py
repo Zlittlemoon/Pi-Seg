@@ -170,6 +170,27 @@ class CATSegPredictor(nn.Module):
         self.cached_delta_corr = None
 
         # ============================================================
+        # SegEarth-OV style Global Bias Alleviation
+        # ============================================================
+        self.segearth_gba = os.environ.get("PISEG_SEGEARTH_GBA", "0") == "1"
+        self.segearth_gba_lambda = float(os.environ.get("PISEG_SEGEARTH_LAMBDA", "-0.3"))
+
+        # 默认只在 eval / inference 使用，符合 SegEarth-OV training-free 思路。
+        # 如果要训练时也启用，设置 PISEG_SEGEARTH_APPLY_TRAIN=1
+        self.segearth_apply_train = os.environ.get("PISEG_SEGEARTH_APPLY_TRAIN", "0") == "1"
+
+        self.segearth_verbose = os.environ.get("PISEG_SEGEARTH_VERBOSE", "0") == "1"
+
+        print(
+            "[SegEarth-GBA-Config] "
+            f"enabled={self.segearth_gba}, "
+            f"lambda={self.segearth_gba_lambda}, "
+            f"apply_train={self.segearth_apply_train}, "
+            f"verbose={self.segearth_verbose}",
+            flush=True,
+        )
+
+        # ============================================================
         # Uncertainty-aware Lazy Image-SPM Gate
         # ============================================================
         # 默认关闭；只有显式设置 PISEG_UA_LAZY_GATE=1 才启用。
@@ -484,15 +505,17 @@ class CATSegPredictor(nn.Module):
             torch.save(item, save_path)
             self.lazy_vis_count += 1
 
-    def forward(self, 
-                x, 
-                vis_guidance, 
-                prompt=None, 
-                gt_cls=None,
-                files_name=None,
-                input_images=None,
-                targets=None,
-                ):
+    def forward(
+        self, 
+        x, 
+        vis_guidance, 
+        prompt=None, 
+        gt_cls=None,
+        files_name=None,
+        input_images=None,
+        targets=None,
+        image_cls_feature=None,
+    ):
         vis = [vis_guidance[k] for k in vis_guidance.keys()][::-1]
         class_names = self.class_texts if self.training else self.test_class_texts
         class_names = [class_names[c] for c in gt_cls] if gt_cls is not None else class_names
@@ -627,7 +650,32 @@ class CATSegPredictor(nn.Module):
                 print(f"[VIS] noise_ratio={noise_ratio:.6f}, delta_ratio={delta_ratio:.6f}")
 
 
-        out = self.transformer(x, text, vis)
+        # SegEarth-OV style global bias alleviation.
+        # 默认只在 eval/inference 使用；训练时启用需要 PISEG_SEGEARTH_APPLY_TRAIN=1。
+        use_segearth_gba = (
+            self.segearth_gba
+            and image_cls_feature is not None
+            and ((not self.training) or self.segearth_apply_train)
+        )
+
+        cls_bias_lambda = self.segearth_gba_lambda if use_segearth_gba else 0.0
+
+        if self.segearth_verbose and use_segearth_gba:
+            print(
+                "[SegEarth-GBA] "
+                f"training={self.training}, "
+                f"lambda={cls_bias_lambda}, "
+                f"cls_shape={tuple(image_cls_feature.shape)}",
+                flush=True,
+            )
+
+        out = self.transformer(
+            x,
+            text,
+            vis,
+            image_cls_feats=image_cls_feature,
+            cls_bias_lambda=cls_bias_lambda,
+        )
 
         if (not self.training) and self.lazy_vis:
             self._save_lazy_vis_dump(
@@ -732,21 +780,28 @@ class CATSegHead(nn.Module):
             transformer_predictor=CATSegPredictor(cfg),
         )
 
-    def forward(self, 
-                features, 
-                guidance_features, 
-                prompt=None, 
-                gt_cls=None, 
-                files_name=None, 
-                input_images=None,
-                targets=None,
-                ):
+    def forward(
+        self, 
+        features, 
+        guidance_features, 
+        prompt=None, 
+        gt_cls=None, 
+        files_name=None, 
+        input_images=None,
+        targets=None,
+    ):
+        # features: (B, 1 + H*W, C)
+        # features[:, 0, :] is CLIP image CLS token
+        # features[:, 1:, :] are patch tokens
+        image_cls_feature = features[:, 0, :]
+
         img_feat = rearrange(
             features[:, 1:, :],
             "b (h w) c -> b c h w",
             h=self.feature_resolution[0],
             w=self.feature_resolution[1],
         )
+
         return self.predictor(
             img_feat,
             guidance_features,
@@ -755,4 +810,5 @@ class CATSegHead(nn.Module):
             files_name=files_name,
             input_images=input_images,
             targets=targets,
+            image_cls_feature=image_cls_feature,
         )
