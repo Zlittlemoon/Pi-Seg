@@ -64,8 +64,43 @@ def _download(url: str, root: str = os.path.expanduser("~/.cache/clip")):
 def available_models():
     return list(_MODELS.keys())
 
+def _strip_module_prefix(state_dict):
+    return {
+        k.replace("module.", "", 1) if k.startswith("module.") else k: v
+        for k, v in state_dict.items()
+    }
 
 def load(name: str, device: Union[str, torch.device] = "cuda" if torch.cuda.is_available() else "cpu", jit=True, prompt_depth=0, prompt_length=0):
+    # ===== local LAST-ViT / open_clip style checkpoint =====
+    if os.path.isfile(name):
+        ckpt = torch.load(name, map_location="cpu")
+
+        if isinstance(ckpt, dict) and "state_dict" in ckpt:
+            state_dict = ckpt["state_dict"]
+        elif isinstance(ckpt, dict):
+            state_dict = ckpt
+        else:
+            raise RuntimeError(f"Unsupported local checkpoint type: {type(ckpt)}")
+
+        state_dict = _strip_module_prefix(state_dict)
+
+        # 有些 checkpoint 可能带 open_clip 的 logit_scale 等，build_model 可以处理
+        model = build_model(state_dict, prompt_depth, prompt_length).to(device)
+        n_px = model.visual.input_resolution
+
+        transform = Compose([
+            Resize(n_px, interpolation=Image.BICUBIC),
+            CenterCrop(n_px),
+            lambda image: image.convert("RGB"),
+            ToTensor(),
+            Normalize(
+                (0.48145466, 0.4578275, 0.40821073),
+                (0.26862954, 0.26130258, 0.27577711),
+            ),
+        ])
+
+        return model, transform
+    
     if name not in _MODELS:
         raise RuntimeError(f"Model {name} not found; available models = {available_models()}")
 

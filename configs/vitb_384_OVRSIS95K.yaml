@@ -10,7 +10,7 @@ MODEL:
     NUM_CLASSES: 35
     TRAIN_CLASS_JSON: "datasets/OVRSIS95K.json"
     TEST_CLASS_JSON: "datasets/OVRSIS95K.json"
-    CLIP_PRETRAINED: "ViT-B/16"
+    CLIP_PRETRAINED: "pretrained_weights/openai_b_16.pt"
     PROMPT_DEPTH: 0
     PROMPT_LENGTH: 0
     TEXT_GUIDANCE_DIM: 512

@@ -501,7 +501,8 @@ def build_model(state_dict: dict, prompt_depth=0, prompt_length=0):
     )
 
     for key in ["input_resolution", "context_length", "vocab_size"]:
-        del state_dict[key]
+        if key in state_dict:
+            del state_dict[key]
 
     convert_weights(model)
     

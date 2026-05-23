@@ -78,13 +78,41 @@ class CATSeg(nn.Module):
                 params.requires_grad = False
 
         self.sliding_window = sliding_window
-        self.clip_resolution = (384, 384) if clip_pretrained == "ViT-B/16" else (336, 336)
-        
-        self.proj_dim = 768 if clip_pretrained == "ViT-B/16" else 1024
+
+        # ============================================================
+        # Recognize local LAST-ViT CLIP-B/16 checkpoint
+        # e.g. pretrained_weights/openai_b_16.pt
+        # ============================================================
+        clip_name = str(clip_pretrained)
+
+        is_vit_b16 = (
+            clip_name == "ViT-B/16"
+            or "openai_b_16" in clip_name
+            or "vit-b-16" in clip_name.lower()
+            or "vit_b_16" in clip_name.lower()
+        )
+
+        if is_vit_b16:
+            self.clip_resolution = (384, 384)
+            self.proj_dim = 768
+            self.layer_indexes = [3, 7]
+        else:
+            self.clip_resolution = (336, 336)
+            self.proj_dim = 1024
+            self.layer_indexes = [7, 15]
+
+        print(
+            "[CLIP-ARCH] "
+            f"clip_pretrained={clip_pretrained}, "
+            f"is_vit_b16={is_vit_b16}, "
+            f"clip_resolution={self.clip_resolution}, "
+            f"proj_dim={self.proj_dim}, "
+            f"layer_indexes={self.layer_indexes}",
+            flush=True,
+        )
+
         self.upsample1 = nn.ConvTranspose2d(self.proj_dim, 256, kernel_size=2, stride=2)
         self.upsample2 = nn.ConvTranspose2d(self.proj_dim, 128, kernel_size=4, stride=4)
-
-        self.layer_indexes = [3, 7] if clip_pretrained == "ViT-B/16" else [7, 15] 
         self.layers = []
         for l in self.layer_indexes:
             self.sem_seg_head.predictor.clip_model.visual.transformer.resblocks[l].register_forward_hook(lambda m, _, o: self.layers.append(o))
