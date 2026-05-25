@@ -78,16 +78,50 @@ class CATSeg(nn.Module):
                 params.requires_grad = False
 
         self.sliding_window = sliding_window
-        self.clip_resolution = (384, 384) if clip_pretrained == "ViT-B/16" else (336, 336)
-        
-        self.proj_dim = 768 if clip_pretrained == "ViT-B/16" else 1024
+        # ------------------------------------------------------------
+        # Determine CLIP ViT architecture robustly.
+        # When CLIP_PRETRAINED is a local path like openai_b_16.pt,
+        # the old string check `clip_pretrained == "ViT-B/16"` fails.
+        # So infer the architecture from the actual visual transformer.
+        # ------------------------------------------------------------
+        num_resblocks = len(self.sem_seg_head.predictor.clip_model.visual.transformer.resblocks)
+
+        if num_resblocks == 12:
+            # ViT-B/16
+            self.clip_arch = "ViT-B/16"
+            self.clip_resolution = (384, 384)
+            self.proj_dim = 768
+            self.layer_indexes = [3, 7]
+        elif num_resblocks == 24:
+            # ViT-L/14
+            self.clip_arch = "ViT-L/14"
+            self.clip_resolution = (336, 336)
+            self.proj_dim = 1024
+            self.layer_indexes = [7, 15]
+        else:
+            raise RuntimeError(
+                f"Unsupported CLIP visual transformer depth: {num_resblocks}. "
+                f"clip_pretrained={clip_pretrained}"
+            )
+
+        print(
+            f"[CATSeg] clip_pretrained={clip_pretrained}, "
+            f"inferred_arch={self.clip_arch}, "
+            f"num_resblocks={num_resblocks}, "
+            f"clip_resolution={self.clip_resolution}, "
+            f"proj_dim={self.proj_dim}, "
+            f"layer_indexes={self.layer_indexes}",
+            flush=True,
+        )
+
         self.upsample1 = nn.ConvTranspose2d(self.proj_dim, 256, kernel_size=2, stride=2)
         self.upsample2 = nn.ConvTranspose2d(self.proj_dim, 128, kernel_size=4, stride=4)
 
-        self.layer_indexes = [3, 7] if clip_pretrained == "ViT-B/16" else [7, 15] 
         self.layers = []
         for l in self.layer_indexes:
-            self.sem_seg_head.predictor.clip_model.visual.transformer.resblocks[l].register_forward_hook(lambda m, _, o: self.layers.append(o))
+            self.sem_seg_head.predictor.clip_model.visual.transformer.resblocks[l].register_forward_hook(
+                lambda m, _, o: self.layers.append(o)
+            )
         
         # delta corr stats print control
         self.delta_corr_print_freq = 20

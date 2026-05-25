@@ -164,6 +164,17 @@ class Trainer(DefaultTrainer):
         return build_detection_train_loader(cfg, mapper=mapper)
 
     @classmethod
+    def build_test_loader(cls, cfg, dataset_name):
+        from detectron2.data import build_detection_test_loader
+
+        cfg = cfg.clone()
+        cfg.defrost()
+        cfg.DATALOADER.NUM_WORKERS = 0
+        cfg.freeze()
+
+        return build_detection_test_loader(cfg, dataset_name)
+
+    @classmethod
     def build_lr_scheduler(cls, cfg, optimizer):
         """
         It now calls :func:`detectron2.solver.build_lr_scheduler`.
